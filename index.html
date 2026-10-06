@@ -1,4 +1,18 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Calendario Laboral 2026</title>
+<meta name="description" content="Organizador de vacaciones, home office y feriados.">
+<meta name="theme-color" content="#f3f4f8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#101219" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Calendario">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&display=swap">
@@ -298,6 +312,8 @@
     *, *::before, *::after { animation: none !important; transition: none !important; }
   }
 </style>
+</head>
+<body>
 
 <div class="wrap">
   <header>
@@ -307,6 +323,7 @@
     </div>
     <div class="actions">
       <button class="btn ghost" id="copyBtn" type="button">Copiar datos</button>
+      <button class="btn ghost" id="importBtn" type="button">Importar datos</button>
       <button class="btn" id="clearBtn" type="button">Limpiar todo</button>
     </div>
   </header>
@@ -339,6 +356,15 @@
   <div class="export" id="exportBox" hidden>
     <p class="hint">No se pudo copiar automáticamente. Seleccioná el texto y copialo:</p>
     <textarea id="exportText" readonly></textarea>
+  </div>
+
+  <div class="export" id="importBox" hidden>
+    <p class="hint">Pegá los datos copiados con "Copiar datos" desde otro navegador o dispositivo. Reemplazan lo que tengas marcado acá.</p>
+    <textarea id="importText" placeholder='{ "2026-10-20": "vacation" }'></textarea>
+    <div class="actions">
+      <button class="btn" id="importApply" type="button">Cargar</button>
+      <button class="btn ghost" id="importCancel" type="button">Cancelar</button>
+    </div>
   </div>
 
   <div class="months" id="months"></div>
@@ -638,5 +664,45 @@
     }
   });
 
+  const importBox = document.getElementById('importBox');
+  const importText = document.getElementById('importText');
+  document.getElementById('importBtn').addEventListener('click', () => {
+    importBox.hidden = !importBox.hidden;
+    if (!importBox.hidden) importText.focus();
+  });
+  document.getElementById('importCancel').addEventListener('click', () => {
+    importBox.hidden = true;
+    importText.value = '';
+  });
+  document.getElementById('importApply').addEventListener('click', () => {
+    let parsed;
+    try {
+      parsed = JSON.parse(importText.value);
+    } catch (e) {
+      toast('Los datos no son válidos');
+      return;
+    }
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      toast('Los datos no son válidos');
+      return;
+    }
+    const next = {};
+    Object.entries(parsed).forEach(([key, type]) => {
+      if (/^\d{4}-\d{2}-\d{2}$/.test(key) && TYPES[type] && !HOLIDAYS[key]) next[key] = type;
+    });
+    data = next;
+    writeStore();
+    render();
+    importBox.hidden = true;
+    importText.value = '';
+    toast(`Datos cargados (${Object.keys(next).length} días)`);
+  });
+
   render();
+
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
 </script>
+</body>
+</html>
