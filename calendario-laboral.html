@@ -1,0 +1,642 @@
+<title>Calendario Laboral 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+  /* Layout: resumen de estados arriba, luego un bloque por mes con grilla lunes–viernes; cada estado es un relleno sólido propio */
+  :root {
+    --bg: #f3f4f8;
+    --surface: #ffffff;
+    --surface-2: #eaecf2;
+    --fg: #181b24;
+    --muted: #5c6274;
+    --line: #dcdfe8;
+    --ink-btn: #181b24;
+    --on-ink: #ffffff;
+    --on-state: #ffffff;
+    --vac: #0d8660;
+    --ho: #3f5bd6;
+    --geo: #c9530d;
+    --fer: #c0285a;
+    --half: #7a3fc2;
+    --ring: #181b24;
+    --shadow: 0 1px 2px rgba(24, 27, 36, .06), 0 8px 24px rgba(24, 27, 36, .08);
+    --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+    --font-body: "Figtree", "Segoe UI", system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #101219;
+      --surface: #191c25;
+      --surface-2: #232734;
+      --fg: #eceef5;
+      --muted: #9ba2b4;
+      --line: #2c3141;
+      --ink-btn: #eceef5;
+      --on-ink: #101219;
+      --vac: #138f68;
+      --ho: #4c67e0;
+      --geo: #cc5a18;
+      --fer: #c8326a;
+      --half: #8550cf;
+      --ring: #eceef5;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 10px 28px rgba(0, 0, 0, .35);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #101219;
+    --surface: #191c25;
+    --surface-2: #232734;
+    --fg: #eceef5;
+    --muted: #9ba2b4;
+    --line: #2c3141;
+    --ink-btn: #eceef5;
+    --on-ink: #101219;
+    --vac: #138f68;
+    --ho: #4c67e0;
+    --geo: #cc5a18;
+    --fer: #c8326a;
+    --half: #8550cf;
+    --ring: #eceef5;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 10px 28px rgba(0, 0, 0, .35);
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.45;
+    padding-block: 32px 48px;
+    padding-inline: 16px;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; display: grid; gap: 24px; }
+
+  header { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 16px; }
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(28px, 5vw, 40px);
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+    margin: 0;
+    text-wrap: balance;
+  }
+  .sub { margin: 6px 0 0; color: var(--muted); }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .btn {
+    font: 600 14px var(--font-body);
+    padding: 10px 16px;
+    border-radius: 999px;
+    border: 1.5px solid var(--ink-btn);
+    background: var(--ink-btn);
+    color: var(--on-ink);
+    cursor: pointer;
+    transition: transform .15s ease, background-color .15s ease, color .15s ease;
+  }
+  .btn:hover { transform: translateY(-1px); }
+  .btn.ghost { background: transparent; color: var(--fg); }
+  .btn.danger { background: var(--fer); border-color: var(--fer); color: var(--on-state); }
+  .btn:focus-visible, .day:focus-visible, .opt:focus-visible { outline: 3px solid var(--ring); outline-offset: 2px; }
+
+  .summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 12px;
+  }
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 14px 16px;
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+  }
+  .stat-head { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 13px; color: var(--muted); }
+  .swatch { width: 14px; height: 14px; border-radius: 4px; background: var(--c); flex-shrink: 0; }
+  .swatch.striped, .day.holiday {
+    background-image: repeating-linear-gradient(135deg, rgba(255,255,255,.16) 0 6px, transparent 6px 12px);
+  }
+  .swatch.striped { background-color: var(--c); }
+  .stat-value {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 30px;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .stat-value small { font-family: var(--font-body); font-size: 14px; font-weight: 600; color: var(--muted); }
+  .stat.vac { grid-column: span 2; }
+  .bar { height: 8px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+  .bar > i { display: block; height: 100%; width: 0; background: var(--vac); border-radius: inherit; transition: width .35s ease, background-color .2s; }
+  .stat.full .bar > i { background: var(--fer); }
+  .stat-note { font-size: 12px; color: var(--muted); }
+  .stat.full .stat-note { color: var(--fer); font-weight: 600; }
+  @media (max-width: 420px) { .stat.vac { grid-column: auto; } }
+
+  .months { display: grid; gap: 28px; }
+  .month h2 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 20px;
+    margin: 0 0 10px;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  .month h2 span { font-family: var(--font-body); font-size: 13px; font-weight: 500; color: var(--muted); }
+  .grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+  .dow {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 0 4px 2px;
+  }
+
+  .day {
+    appearance: none;
+    font: inherit;
+    text-align: left;
+    min-height: 76px;
+    padding: 8px 10px;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--fg);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 4px;
+    min-width: 0;
+    position: relative;
+    transition: transform .15s ease, box-shadow .15s ease, background-color .2s ease;
+  }
+  .day:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+  .day .num {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 22px;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .day .tag {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--muted);
+  }
+  .day.work .tag { font-weight: 500; text-transform: none; letter-spacing: 0; }
+
+  .day.vacation, .day.homeoffice, .day.geoloc, .day.holiday, .day.halfday {
+    border-color: transparent;
+    color: var(--on-state);
+  }
+  .day.vacation .tag, .day.homeoffice .tag, .day.geoloc .tag, .day.holiday .tag, .day.halfday .tag { color: var(--on-state); opacity: .92; }
+  .day.halfday { background-color: var(--half); outline: 2px dashed rgba(255, 255, 255, .55); outline-offset: -6px; }
+  .swatch.dashed { outline: 1.5px dashed rgba(255, 255, 255, .7); outline-offset: -4px; }
+  .day.vacation { background-color: var(--vac); }
+  .day.homeoffice { background-color: var(--ho); }
+  .day.geoloc { background-color: var(--geo); }
+  .day.holiday { background-color: var(--fer); cursor: default; }
+  .day.holiday:hover { transform: none; box-shadow: none; }
+  .day.today::after {
+    content: "Hoy";
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 999px;
+    background: var(--ink-btn);
+    color: var(--on-ink);
+  }
+  .day.pop { animation: pop .28s ease; }
+  @keyframes pop { 0% { transform: scale(.94); } 60% { transform: scale(1.03); } 100% { transform: scale(1); } }
+  .blank { min-height: 76px; }
+
+  .menu {
+    position: fixed;
+    z-index: 10;
+    width: 220px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    padding: 6px;
+    display: grid;
+    gap: 2px;
+    animation: rise .16s ease;
+  }
+  @keyframes rise { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+  .menu-title { font-size: 12px; font-weight: 600; color: var(--muted); padding: 6px 10px 4px; }
+  .opt {
+    appearance: none;
+    font: 500 14px var(--font-body);
+    color: var(--fg);
+    background: transparent;
+    border: 0;
+    border-radius: 9px;
+    padding: 9px 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    text-align: left;
+  }
+  .opt:hover:not([disabled]) { background: var(--surface-2); }
+  .opt.current { font-weight: 700; background: var(--surface-2); }
+  .opt .check { margin-left: auto; font-weight: 700; }
+  .opt[disabled] { cursor: not-allowed; color: var(--muted); }
+  .opt small { display: block; font-size: 11px; color: var(--fer); font-weight: 600; }
+
+  .export { display: grid; gap: 8px; }
+  .export textarea {
+    width: 100%;
+    min-height: 120px;
+    font: 13px ui-monospace, "Cascadia Code", Consolas, monospace;
+    color: var(--fg);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 10px;
+  }
+  .hint { color: var(--muted); font-size: 13px; margin: 0; }
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+    transform: translateX(-50%);
+    background: var(--ink-btn);
+    color: var(--on-ink);
+    font-weight: 600;
+    font-size: 14px;
+    padding: 10px 16px;
+    border-radius: 999px;
+    box-shadow: var(--shadow);
+  }
+
+  @media (max-width: 520px) {
+    .day { min-height: 62px; padding: 6px 7px; border-radius: 10px; }
+    .day .num { font-size: 18px; }
+    .day .tag { font-size: 9px; }
+    .day.today::after { top: 5px; right: 5px; font-size: 9px; padding: 1px 5px; }
+    .blank { min-height: 62px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Calendario Laboral 2026</h1>
+      <p class="sub">Tocá un día para marcar vacaciones, home office, geolocalización o media jornada.</p>
+    </div>
+    <div class="actions">
+      <button class="btn ghost" id="copyBtn" type="button">Copiar datos</button>
+      <button class="btn" id="clearBtn" type="button">Limpiar todo</button>
+    </div>
+  </header>
+
+  <section class="summary" aria-label="Resumen">
+    <div class="stat vac" id="vacStat">
+      <div class="stat-head"><span class="swatch" style="--c: var(--vac)"></span>Vacaciones</div>
+      <div class="stat-value"><span id="vacCount">0</span> <small>/ 20 días</small></div>
+      <div class="bar"><i id="vacBar"></i></div>
+      <div class="stat-note" id="vacNote">Te quedan 20 días</div>
+    </div>
+    <div class="stat">
+      <div class="stat-head"><span class="swatch" style="--c: var(--ho)"></span>Home Office</div>
+      <div class="stat-value" id="hoCount">0</div>
+    </div>
+    <div class="stat">
+      <div class="stat-head"><span class="swatch" style="--c: var(--geo)"></span>Geolocalización</div>
+      <div class="stat-value" id="geoCount">0</div>
+    </div>
+    <div class="stat">
+      <div class="stat-head"><span class="swatch dashed" style="--c: var(--half)"></span>Media jornada</div>
+      <div class="stat-value" id="halfCount">0</div>
+    </div>
+    <div class="stat">
+      <div class="stat-head"><span class="swatch striped" style="--c: var(--fer)"></span>Feriados</div>
+      <div class="stat-value" id="ferCount">0</div>
+    </div>
+  </section>
+
+  <div class="export" id="exportBox" hidden>
+    <p class="hint">No se pudo copiar automáticamente. Seleccioná el texto y copialo:</p>
+    <textarea id="exportText" readonly></textarea>
+  </div>
+
+  <div class="months" id="months"></div>
+
+  <p class="hint">Los días sin marcar cuentan como trabajo normal. Los feriados vienen fijos. El 24 y el 31 de diciembre arrancan como posible media jornada.</p>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+  const STORAGE_KEY = 'calendarData';
+  const MAX_VACATION = 20;
+  const HOLIDAYS = {
+    '2026-10-12': 'Día de la Raza',
+    '2026-11-09': 'Visita del Papa',
+    '2026-11-10': 'Visita del Papa',
+    '2026-11-11': 'Día del Municipal',
+    '2026-11-23': 'Soberanía Nacional',
+    '2026-12-07': 'Feriado puente',
+    '2026-12-08': 'Inmaculada Concepción',
+    '2026-12-25': 'Navidad'
+  };
+  const TYPES = {
+    work: 'Trabajo',
+    vacation: 'Vacaciones',
+    homeoffice: 'Home Office',
+    geoloc: 'Geoloc',
+    halfday: 'Media jornada'
+  };
+  const TYPE_COLOR = { work: 'var(--surface-2)', vacation: 'var(--vac)', homeoffice: 'var(--ho)', geoloc: 'var(--geo)', halfday: 'var(--half)' };
+  const DEFAULTS = {
+    '2026-12-24': 'halfday',
+    '2026-12-31': 'halfday'
+  };
+  const MONTHS = [
+    { year: 2026, month: 9, from: 6, name: 'Octubre' },
+    { year: 2026, month: 10, from: 1, name: 'Noviembre' },
+    { year: 2026, month: 11, from: 1, name: 'Diciembre' }
+  ];
+  const DOW = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie'];
+
+  let data = readStore();
+  let lastChanged = null;
+
+  function readStore() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch (e) {
+      return {};
+    }
+  }
+  function writeStore() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (e) {}
+  }
+
+  function keyOf(y, m, d) {
+    return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  }
+  function todayKey() {
+    const t = new Date();
+    return keyOf(t.getFullYear(), t.getMonth(), t.getDate());
+  }
+  function stateOf(key) {
+    return HOLIDAYS[key] ? 'holiday' : (data[key] || DEFAULTS[key] || 'work');
+  }
+  function count(type) {
+    const keys = new Set([...Object.keys(data), ...Object.keys(DEFAULTS)]);
+    return [...keys].filter(k => stateOf(k) === type).length;
+  }
+
+  function render() {
+    const root = document.getElementById('months');
+    root.innerHTML = '';
+    const today = todayKey();
+    let holidayCount = 0;
+
+    MONTHS.forEach(({ year, month, from, name }) => {
+      const section = document.createElement('section');
+      section.className = 'month';
+      const days = [];
+      const last = new Date(year, month + 1, 0).getDate();
+      for (let d = from; d <= last; d++) {
+        const dow = new Date(year, month, d).getDay();
+        if (dow >= 1 && dow <= 5) days.push({ d, dow });
+      }
+
+      const h2 = document.createElement('h2');
+      h2.textContent = name;
+      const meta = document.createElement('span');
+      meta.textContent = `${days.length} días hábiles`;
+      h2.appendChild(meta);
+      section.appendChild(h2);
+
+      const grid = document.createElement('div');
+      grid.className = 'grid';
+      DOW.forEach(label => {
+        const el = document.createElement('div');
+        el.className = 'dow';
+        el.textContent = label;
+        grid.appendChild(el);
+      });
+
+      if (days.length) {
+        for (let i = 1; i < days[0].dow; i++) {
+          const blank = document.createElement('div');
+          blank.className = 'blank';
+          grid.appendChild(blank);
+        }
+      }
+
+      days.forEach(({ d }) => {
+        const key = keyOf(year, month, d);
+        const state = stateOf(key);
+        const isHoliday = state === 'holiday';
+        if (isHoliday) holidayCount++;
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `day ${state}`;
+        if (key === today) btn.classList.add('today');
+        if (key === lastChanged) btn.classList.add('pop');
+        btn.dataset.key = key;
+
+        const num = document.createElement('span');
+        num.className = 'num';
+        num.textContent = d;
+        const tag = document.createElement('span');
+        tag.className = 'tag';
+        tag.textContent = isHoliday ? HOLIDAYS[key] : TYPES[state];
+
+        btn.append(num, tag);
+        const label = `${d} de ${name}: ${tag.textContent}`;
+        btn.setAttribute('aria-label', label);
+        btn.title = isHoliday ? `Feriado: ${HOLIDAYS[key]}` : label;
+        if (isHoliday) {
+          btn.setAttribute('aria-disabled', 'true');
+        } else {
+          btn.setAttribute('aria-haspopup', 'menu');
+          btn.addEventListener('click', () => openMenu(btn, key, `${d} de ${name}`));
+        }
+        grid.appendChild(btn);
+      });
+
+      section.appendChild(grid);
+      root.appendChild(section);
+    });
+
+    const vac = count('vacation');
+    document.getElementById('vacCount').textContent = vac;
+    document.getElementById('vacBar').style.width = Math.min(100, vac / MAX_VACATION * 100) + '%';
+    const left = MAX_VACATION - vac;
+    document.getElementById('vacNote').textContent = left > 0
+      ? `Te quedan ${left} ${left === 1 ? 'día' : 'días'}`
+      : 'Llegaste al máximo de 20 días';
+    document.getElementById('vacStat').classList.toggle('full', left <= 0);
+    document.getElementById('hoCount').textContent = count('homeoffice');
+    document.getElementById('geoCount').textContent = count('geoloc');
+    document.getElementById('halfCount').textContent = count('halfday');
+    document.getElementById('ferCount').textContent = holidayCount;
+    lastChanged = null;
+  }
+
+  let openMenuEl = null;
+  function closeMenu() {
+    if (openMenuEl) {
+      openMenuEl.remove();
+      openMenuEl = null;
+    }
+  }
+
+  function openMenu(anchor, key, title) {
+    const wasOpenHere = openMenuEl && openMenuEl.dataset.key === key;
+    closeMenu();
+    if (wasOpenHere) return;
+
+    const current = stateOf(key);
+    const atLimit = count('vacation') >= MAX_VACATION && current !== 'vacation';
+
+    const menu = document.createElement('div');
+    menu.className = 'menu';
+    menu.setAttribute('role', 'menu');
+    menu.dataset.key = key;
+
+    const head = document.createElement('div');
+    head.className = 'menu-title';
+    head.textContent = title;
+    menu.appendChild(head);
+
+    Object.keys(TYPES).forEach(type => {
+      const opt = document.createElement('button');
+      opt.type = 'button';
+      opt.className = 'opt';
+      opt.setAttribute('role', 'menuitem');
+      const sw = document.createElement('span');
+      sw.className = 'swatch';
+      sw.style.setProperty('--c', TYPE_COLOR[type]);
+      if (type === 'work') sw.style.boxShadow = 'inset 0 0 0 1.5px var(--line)';
+      const text = document.createElement('span');
+      text.textContent = TYPES[type];
+      opt.append(sw, text);
+
+      if (type === current) {
+        opt.classList.add('current');
+        const check = document.createElement('span');
+        check.className = 'check';
+        check.textContent = '✓';
+        opt.appendChild(check);
+      }
+      if (type === 'vacation' && atLimit) {
+        opt.disabled = true;
+        const note = document.createElement('small');
+        note.textContent = 'Límite de 20 días alcanzado';
+        text.appendChild(note);
+      }
+      opt.addEventListener('click', () => {
+        if (type === 'work' && !DEFAULTS[key]) delete data[key];
+        else data[key] = type;
+        writeStore();
+        lastChanged = key;
+        closeMenu();
+        render();
+        const target = document.querySelector(`.day[data-key="${key}"]`);
+        if (target) target.focus({ preventScroll: true });
+      });
+      menu.appendChild(opt);
+    });
+
+    document.body.appendChild(menu);
+    const r = anchor.getBoundingClientRect();
+    const mw = menu.offsetWidth;
+    const mh = menu.offsetHeight;
+    let top = r.bottom + 6;
+    if (top + mh > window.innerHeight - 8) top = Math.max(8, r.top - mh - 6);
+    const left = Math.min(Math.max(8, r.left), window.innerWidth - mw - 8);
+    menu.style.top = top + 'px';
+    menu.style.left = left + 'px';
+    openMenuEl = menu;
+    const first = menu.querySelector('.opt:not([disabled])');
+    if (first) first.focus({ preventScroll: true });
+  }
+
+  document.addEventListener('pointerdown', e => {
+    if (openMenuEl && !openMenuEl.contains(e.target) && !e.target.closest('.day')) closeMenu();
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
+  window.addEventListener('scroll', closeMenu, { passive: true });
+  window.addEventListener('resize', closeMenu);
+
+  let toastTimer = null;
+  function toast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { el.hidden = true; }, 2200);
+  }
+
+  const clearBtn = document.getElementById('clearBtn');
+  let clearTimer = null;
+  clearBtn.addEventListener('click', () => {
+    if (!clearBtn.classList.contains('danger')) {
+      clearBtn.classList.add('danger');
+      clearBtn.textContent = 'Confirmar borrado';
+      clearTimer = setTimeout(resetClear, 4000);
+      return;
+    }
+    resetClear();
+    data = {};
+    writeStore();
+    render();
+    toast('Calendario limpio');
+  });
+  function resetClear() {
+    clearTimeout(clearTimer);
+    clearBtn.classList.remove('danger');
+    clearBtn.textContent = 'Limpiar todo';
+  }
+
+  document.getElementById('copyBtn').addEventListener('click', () => {
+    const json = JSON.stringify(data, null, 2);
+    const box = document.getElementById('exportBox');
+    const area = document.getElementById('exportText');
+    const fallback = () => {
+      area.value = json;
+      box.hidden = false;
+      area.focus();
+      area.select();
+    };
+    try {
+      navigator.clipboard.writeText(json).then(() => {
+        box.hidden = true;
+        toast('Datos copiados');
+      }, fallback);
+    } catch (e) {
+      fallback();
+    }
+  });
+
+  render();
+</script>
