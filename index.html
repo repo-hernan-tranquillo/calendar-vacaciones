@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Calendario Laboral 2026</title>
+<title>Calendario Laboral</title>
 <meta name="description" content="Organizador de vacaciones, home office y feriados.">
 <meta name="theme-color" content="#f3f4f8" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#101219" media="(prefers-color-scheme: dark)">
@@ -100,6 +100,29 @@
     text-wrap: balance;
   }
   .sub { margin: 6px 0 0; color: var(--muted); }
+  .years {
+    display: inline-flex;
+    gap: 2px;
+    margin-top: 10px;
+    padding: 3px;
+    border-radius: 999px;
+    background: var(--surface-2);
+  }
+  .year-btn {
+    appearance: none;
+    font: 700 15px var(--font-display);
+    font-variant-numeric: tabular-nums;
+    padding: 6px 16px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: background-color .15s ease, color .15s ease;
+  }
+  .year-btn:hover { color: var(--fg); }
+  .year-btn[aria-pressed="true"] { background: var(--ink-btn); color: var(--on-ink); }
+  .year-btn:focus-visible { outline: 3px solid var(--ring); outline-offset: 2px; }
   .actions { display: flex; gap: 8px; flex-wrap: wrap; }
   .btn {
     font: 600 14px var(--font-body);
@@ -318,7 +341,11 @@
 <div class="wrap">
   <header>
     <div>
-      <h1>Calendario Laboral 2026</h1>
+      <h1>Calendario Laboral</h1>
+      <div class="years" role="group" aria-label="Año">
+        <button class="year-btn" type="button" data-year="2026" aria-pressed="false">2026</button>
+        <button class="year-btn" type="button" data-year="2027" aria-pressed="false">2027</button>
+      </div>
       <p class="sub">Tocá un día para marcar vacaciones, home office, geolocalización o media jornada.</p>
     </div>
     <div class="actions">
@@ -331,7 +358,7 @@
   <section class="summary" aria-label="Resumen">
     <div class="stat vac" id="vacStat">
       <div class="stat-head"><span class="swatch" style="--c: var(--vac)"></span>Vacaciones</div>
-      <div class="stat-value"><span id="vacCount">0</span> <small>/ 20 días</small></div>
+      <div class="stat-value"><span id="vacCount">0</span> <small id="vacMax">/ 20 días</small></div>
       <div class="bar"><i id="vacBar"></i></div>
       <div class="stat-note" id="vacNote">Te quedan 20 días</div>
     </div>
@@ -376,7 +403,13 @@
 
 <script>
   const STORAGE_KEY = 'calendarData';
-  const MAX_VACATION = 20;
+  const YEAR_KEY = 'calendarYear';
+  // Cada año arranca en `from` (mes 0–11, día) y tiene su propio tope de vacaciones.
+  const YEARS = {
+    2026: { from: [9, 6], maxVacation: 20 },
+    2027: { from: [0, 1], maxVacation: 30 }
+  };
+  // Solo días hábiles. Los trasladables 2027 ya están movidos según la Ley 27.399; faltan los puentes turísticos 2027 (los fija un decreto).
   const HOLIDAYS = {
     '2026-10-12': 'Día de la Raza',
     '2026-11-09': 'Visita del Papa',
@@ -385,7 +418,20 @@
     '2026-11-23': 'Soberanía Nacional',
     '2026-12-07': 'Feriado puente',
     '2026-12-08': 'Inmaculada Concepción',
-    '2026-12-25': 'Navidad'
+    '2026-12-25': 'Navidad',
+    '2027-01-01': 'Año Nuevo',
+    '2027-02-08': 'Carnaval',
+    '2027-02-09': 'Carnaval',
+    '2027-03-24': 'Día de la Memoria',
+    '2027-03-26': 'Viernes Santo',
+    '2027-04-02': 'Malvinas',
+    '2027-05-25': 'Revolución de Mayo',
+    '2027-06-21': 'Güemes',
+    '2027-07-09': 'Independencia',
+    '2027-08-16': 'San Martín',
+    '2027-10-11': 'Diversidad Cultural',
+    '2027-11-11': 'Día del Municipal',
+    '2027-12-08': 'Inmaculada Concepción'
   };
   const TYPES = {
     work: 'Trabajo',
@@ -397,17 +443,30 @@
   const TYPE_COLOR = { work: 'var(--surface-2)', vacation: 'var(--vac)', homeoffice: 'var(--ho)', geoloc: 'var(--geo)', halfday: 'var(--half)' };
   const DEFAULTS = {
     '2026-12-24': 'halfday',
-    '2026-12-31': 'halfday'
+    '2026-12-31': 'halfday',
+    '2027-12-24': 'halfday',
+    '2027-12-31': 'halfday'
   };
-  const MONTHS = [
-    { year: 2026, month: 9, from: 6, name: 'Octubre' },
-    { year: 2026, month: 10, from: 1, name: 'Noviembre' },
-    { year: 2026, month: 11, from: 1, name: 'Diciembre' }
-  ];
+  const MONTH_NAMES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
   const DOW = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie'];
 
   let data = readStore();
+  let year = readYear();
   let lastChanged = null;
+
+  function readYear() {
+    let saved = null;
+    try { saved = Number(localStorage.getItem(YEAR_KEY)); } catch (e) {}
+    if (YEARS[saved]) return saved;
+    const now = new Date().getFullYear();
+    return YEARS[now] ? now : Number(Object.keys(YEARS)[0]);
+  }
+  function monthsOf(y) {
+    const [m0, d0] = YEARS[y].from;
+    const list = [];
+    for (let m = m0; m < 12; m++) list.push({ year: y, month: m, from: m === m0 ? d0 : 1, name: MONTH_NAMES[m] });
+    return list;
+  }
 
   function readStore() {
     try {
@@ -433,7 +492,7 @@
   }
   function count(type) {
     const keys = new Set([...Object.keys(data), ...Object.keys(DEFAULTS)]);
-    return [...keys].filter(k => stateOf(k) === type).length;
+    return [...keys].filter(k => k.startsWith(year + '-') && stateOf(k) === type).length;
   }
 
   function render() {
@@ -441,8 +500,12 @@
     root.innerHTML = '';
     const today = todayKey();
     let holidayCount = 0;
+    const maxVacation = YEARS[year].maxVacation;
 
-    MONTHS.forEach(({ year, month, from, name }) => {
+    document.title = `Calendario Laboral ${year}`;
+    document.querySelectorAll('.year-btn').forEach(b => b.setAttribute('aria-pressed', String(Number(b.dataset.year) === year)));
+
+    monthsOf(year).forEach(({ year, month, from, name }) => {
       const section = document.createElement('section');
       section.className = 'month';
       const days = [];
@@ -515,11 +578,12 @@
 
     const vac = count('vacation');
     document.getElementById('vacCount').textContent = vac;
-    document.getElementById('vacBar').style.width = Math.min(100, vac / MAX_VACATION * 100) + '%';
-    const left = MAX_VACATION - vac;
+    document.getElementById('vacMax').textContent = `/ ${maxVacation} días`;
+    document.getElementById('vacBar').style.width = Math.min(100, vac / maxVacation * 100) + '%';
+    const left = maxVacation - vac;
     document.getElementById('vacNote').textContent = left > 0
       ? `Te quedan ${left} ${left === 1 ? 'día' : 'días'}`
-      : 'Llegaste al máximo de 20 días';
+      : `Llegaste al máximo de ${maxVacation} días`;
     document.getElementById('vacStat').classList.toggle('full', left <= 0);
     document.getElementById('hoCount').textContent = count('homeoffice');
     document.getElementById('geoCount').textContent = count('geoloc');
@@ -542,7 +606,8 @@
     if (wasOpenHere) return;
 
     const current = stateOf(key);
-    const atLimit = count('vacation') >= MAX_VACATION && current !== 'vacation';
+    const maxVacation = YEARS[year].maxVacation;
+    const atLimit = count('vacation') >= maxVacation && current !== 'vacation';
 
     const menu = document.createElement('div');
     menu.className = 'menu';
@@ -577,7 +642,7 @@
       if (type === 'vacation' && atLimit) {
         opt.disabled = true;
         const note = document.createElement('small');
-        note.textContent = 'Límite de 20 días alcanzado';
+        note.textContent = `Límite de ${maxVacation} días alcanzado`;
         text.appendChild(note);
       }
       opt.addEventListener('click', () => {
@@ -613,6 +678,18 @@
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
   window.addEventListener('scroll', closeMenu, { passive: true });
   window.addEventListener('resize', closeMenu);
+
+  document.querySelectorAll('.year-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const next = Number(btn.dataset.year);
+      if (next === year) return;
+      year = next;
+      try { localStorage.setItem(YEAR_KEY, String(year)); } catch (e) {}
+      closeMenu();
+      render();
+      window.scrollTo({ top: 0 });
+    });
+  });
 
   let toastTimer = null;
   function toast(msg) {
